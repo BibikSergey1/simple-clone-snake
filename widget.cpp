@@ -3,9 +3,9 @@
 #include <QMessageBox>
 #include "sprite.h"
 
-Widget::Widget(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::Widget)
+Widget::Widget(QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::Widget)
 {
     ui->setupUi(this);
     m_col = 40;
@@ -85,6 +85,7 @@ void Widget::GameInit()
     m_pSprite_blood->SetVelocity(0, 0);
 
     score_ = 0;
+    m_pause = false;
 }
 
 int Widget::Random(int low, int high)
