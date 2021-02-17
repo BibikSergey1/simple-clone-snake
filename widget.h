@@ -6,6 +6,9 @@
 #include <QKeyEvent>
 #include <QVector>
 
+#include <thread>
+#include <utility>
+
 namespace Ui {
 class Widget;
 }

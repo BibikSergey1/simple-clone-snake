@@ -8,7 +8,7 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget)
 {
     ui->setupUi(this);
-    m_col = 40;
+    m_col = 30;
     m_row = 30;
     m_size_cell = 16;
     m_width_window = m_col * m_size_cell;
@@ -19,12 +19,12 @@ Widget::Widget(QWidget *parent)
 
     m_pixmap_tileset.load(":/images/tileset.png");
     m_pixmap_tileset.setMask(m_pixmap_tileset.createMaskFromColor(QColor(255,0,255)));
-    m_pixmap_background = m_pixmap_tileset.copy(0,16,640,480);
+    m_pixmap_background = m_pixmap_tileset.copy(0,m_size_cell,m_width_window,m_height_window);
 
     m_pixmap_blood.load(":/images/blood.png");
     m_pixmap_blood.setMask(m_pixmap_blood.createMaskFromColor(QColor(255,255,255)));
 
-    m_pixmap_wall = m_pixmap_tileset.copy(16*8+2,0,16,16);
+    m_pixmap_wall = m_pixmap_tileset.copy(m_size_cell*8+2,0,m_size_cell,m_size_cell);
 
     GameInit();
 
@@ -54,13 +54,13 @@ void Widget::GameInit()
     m_br = false;
     m_newItem = false;
 
-    m_pixmap_head = m_pixmap_tileset.copy(0,0,16,16);
+    m_pixmap_head = m_pixmap_tileset.copy(0,0,m_size_cell,m_size_cell);
     m_pSprite_head = new Sprite(m_pixmap_head, 1, 180);
     m_pSprite_head->SetPosition(m_width_window/2, m_height_window/2);
     m_pSprite_head->SetVelocity(16, 0);
     snake.push_back(m_pSprite_head);
 
-    m_pixmap_mid_tail = m_pixmap_tileset.copy(16,0,16,16);
+    m_pixmap_mid_tail = m_pixmap_tileset.copy(16,0,m_size_cell,m_size_cell);
     m_pSprite_tail = new Sprite(m_pixmap_mid_tail, 1);
     m_pSprite_tail->SetPosition(m_width_window/2 - m_pSprite_tail->GetPosition().width(),
                                m_height_window/2);
@@ -73,10 +73,10 @@ void Widget::GameInit()
     m_pSprite_tail->SetVelocity(16, 0);
     snake.push_back(m_pSprite_tail);
 
-    m_pixmap_angle_tail = m_pixmap_tileset.copy(16*2,0,16,16);
+    m_pixmap_angle_tail = m_pixmap_tileset.copy(16*2,0,m_size_cell,m_size_cell);
     m_pixmap_end_tail = m_pixmap_tileset.copy(16*3,0,16,16);
 
-    m_pSprite_apple = new Sprite(m_pixmap_tileset.copy(16*5,0,16*3,16), 3);
+    m_pSprite_apple = new Sprite(m_pixmap_tileset.copy(16*5,0,m_size_cell*3,m_size_cell), 3);
     m_pSprite_apple->SetPosition(Random(2, m_col-2)*m_size_cell,
                                  Random(2, m_row-2)*m_size_cell);
     m_pSprite_apple->SetVelocity(0, 0);
@@ -97,6 +97,8 @@ void Widget::timerEvent(QTimerEvent *e)
 {
     if(timer_id == e->timerId())
     {
+        update();
+
         if(m_pause == false)
         {
             //змея ползет
@@ -131,24 +133,32 @@ void Widget::timerEvent(QTimerEvent *e)
                                        m_height_window-m_size_cell-snake.front()->GetPosition().height());
         }
 
-        //змея ест яблоко
+        //голова змеи ест яблоко
+        if(m_pSprite_apple->GetPosition().contains(m_pSprite_head->GetPosition()))
+        {
+            //и растет
+            m_newItem = true;
+            m_pSprite_tail = new Sprite(m_pixmap_tileset.copy(16,0,m_size_cell,m_size_cell),1);
+            m_pSprite_tail->SetPosition(snake[snake.size()-1]->GetPosition());
+            m_pSprite_tail->SetVelocity(snake[snake.size()-1]->GetVelocity());
+            snake.push_back(m_pSprite_tail);
+
+            m_pSprite_blood->SetPosition(m_pSprite_apple->GetPosition());
+            m_pSprite_blood->SetOneFrame(true);
+
+            score_++;
+
+            //перемещаем яблоко в случайную координату
+            m_pSprite_apple->SetPosition(Random(2, m_col-2)*m_size_cell,
+                                         Random(2, m_row-2)*m_size_cell);
+        }
+
+        // проверка, если еда попадает на змею,
+        // то опять перемещаем в случайную координату
         for(int i = 0; i < snake.size(); i++)
         {
-            //если яблоко попало на змею, считаем его проглоченым
             if(m_pSprite_apple->GetPosition().contains(snake[i]->GetPosition()))
             {
-                //и растет
-                m_newItem = true;
-                m_pSprite_tail = new Sprite(m_pixmap_tileset.copy(16,0,16,16),1);
-                m_pSprite_tail->SetPosition(snake[snake.size()-1]->GetPosition());
-                m_pSprite_tail->SetVelocity(snake[snake.size()-1]->GetVelocity());
-                snake.push_back(m_pSprite_tail);
-
-                m_pSprite_blood->SetPosition(m_pSprite_apple->GetPosition());
-                m_pSprite_blood->SetOneFrame(true);
-
-                score_++;
-
                 //перемещаем яблоко в случайную координату
                 m_pSprite_apple->SetPosition(Random(2, m_col-2)*m_size_cell,
                                              Random(2, m_row-2)*m_size_cell);
@@ -174,10 +184,10 @@ void Widget::timerEvent(QTimerEvent *e)
                GameInit();
             }
         }
+
+        m_pSprite_apple->UpdateFrame();
+        m_pSprite_blood->UpdateFrame();
     }
-    m_pSprite_apple->UpdateFrame();
-    m_pSprite_blood->UpdateFrame();
-    update();
 }
 
 void Widget::keyPressEvent(QKeyEvent *event)
@@ -209,6 +219,7 @@ void Widget::keyPressEvent(QKeyEvent *event)
             m_pause = (m_pause) ? false : true;
         }break;
     }
+
     m_test_key = false;
 }
 
@@ -248,9 +259,16 @@ void Widget::DrawToDir(QPainter* painter, int i, int a_end, int a_mid)
 void Widget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
-    //int side = qMin(width(), height());
-    //painter.setViewport((width() - side)/2, (height() - side)/2, side, side);
-    painter.setWindow(0,0,m_width_window, m_height_window);
+
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    int side = qMin(width(), height());
+
+    painter.setViewport((width() - side) / 2, (height() - side) / 2,
+                        side, side);
+
+    painter.setWindow(0,0,m_size_cell*m_col,m_size_cell*m_row);
+
     painter.drawPixmap(0,0,m_pixmap_background);
 
     for(int row=0;row<m_row*m_size_cell;row+=m_size_cell)
@@ -358,8 +376,8 @@ void Widget::DrawTextPause(QPainter &p)
     int width_text = 350;
     int height_text = 100;
     QRect rect;
-    rect.setX(640/2-width_text/2);
-    rect.setY(480/2-height_text/2);
+    rect.setX(m_width_window/2-width_text/2);
+    rect.setY(m_height_window/2-height_text/2);
     rect.setWidth(width_text);
     rect.setHeight(height_text);
     p.drawText(rect, Qt::AlignCenter,"P A U S E\npress space to play");
