@@ -6,8 +6,7 @@
 #include <QKeyEvent>
 #include <QVector>
 
-#include <thread>
-#include <utility>
+#include <memory>
 
 namespace Ui {
 class Widget;
@@ -55,7 +54,8 @@ private:
 
     Sprite* m_pSprite_head;
     Sprite* m_pSprite_tail;
-    Sprite* m_pSprite_apple;
+    //Sprite* m_pSprite_apple;
+    std::vector<std::unique_ptr<Sprite> > m_foods;
     Sprite* m_pSprite_blood;
 
     QVector<Sprite*> snake;

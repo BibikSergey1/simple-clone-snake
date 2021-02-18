@@ -43,6 +43,14 @@ Widget::~Widget()
     }
 
     snake.clear();
+
+    m_foods.clear();
+
+    if (m_pSprite_blood)
+    {
+        delete m_pSprite_blood;
+        m_pSprite_blood = nullptr;
+    }
 }
 
 void Widget::GameInit()
@@ -76,10 +84,15 @@ void Widget::GameInit()
     m_pixmap_angle_tail = m_pixmap_tileset.copy(16*2,0,m_size_cell,m_size_cell);
     m_pixmap_end_tail = m_pixmap_tileset.copy(16*3,0,16,16);
 
-    m_pSprite_apple = new Sprite(m_pixmap_tileset.copy(16*5,0,m_size_cell*3,m_size_cell), 3);
-    m_pSprite_apple->SetPosition(Random(2, m_col-2)*m_size_cell,
-                                 Random(2, m_row-2)*m_size_cell);
-    m_pSprite_apple->SetVelocity(0, 0);
+    for (int ii=0; ii < 10; ++ii)
+    {
+        Sprite* pSprite_apple = new Sprite(m_pixmap_tileset.copy(16*5,0,m_size_cell*3,m_size_cell), 3);
+        pSprite_apple->SetPosition(Random(2, m_col-2)*m_size_cell,
+                                     Random(2, m_row-2)*m_size_cell);
+        pSprite_apple->SetVelocity(0, 0);
+
+        m_foods.emplace_back(pSprite_apple);
+    }
 
     m_pSprite_blood = new Sprite(m_pixmap_blood.copy(0,0,40*5,0), 5);
     m_pSprite_blood->SetVelocity(0, 0);
@@ -133,36 +146,42 @@ void Widget::timerEvent(QTimerEvent *e)
                                        m_height_window-m_size_cell-snake.front()->GetPosition().height());
         }
 
-        //голова змеи ест яблоко
-        if(m_pSprite_apple->GetPosition().contains(m_pSprite_head->GetPosition()))
+        for(const auto& food : m_foods)
         {
-            //и растет
-            m_newItem = true;
-            m_pSprite_tail = new Sprite(m_pixmap_tileset.copy(16,0,m_size_cell,m_size_cell),1);
-            m_pSprite_tail->SetPosition(snake[snake.size()-1]->GetPosition());
-            m_pSprite_tail->SetVelocity(snake[snake.size()-1]->GetVelocity());
-            snake.push_back(m_pSprite_tail);
+            //голова змеи ест яблоко
+            if(food->GetPosition().contains(m_pSprite_head->GetPosition()))
+            {
+                //и растет
+                m_newItem = true;
+                m_pSprite_tail = new Sprite(m_pixmap_tileset.copy(16,0,m_size_cell,m_size_cell),1);
+                m_pSprite_tail->SetPosition(snake[snake.size()-1]->GetPosition());
+                m_pSprite_tail->SetVelocity(snake[snake.size()-1]->GetVelocity());
+                snake.push_back(m_pSprite_tail);
 
-            m_pSprite_blood->SetPosition(m_pSprite_apple->GetPosition());
-            m_pSprite_blood->SetOneFrame(true);
+                m_pSprite_blood->SetPosition(food->GetPosition());
+                m_pSprite_blood->SetOneFrame(true);
 
-            score_++;
+                score_++;
 
-            //перемещаем яблоко в случайную координату
-            m_pSprite_apple->SetPosition(Random(2, m_col-2)*m_size_cell,
-                                         Random(2, m_row-2)*m_size_cell);
+                //перемещаем яблоко в случайную координату
+                food->SetPosition(Random(2, m_col-2)*m_size_cell,
+                                             Random(2, m_row-2)*m_size_cell);
+            }
         }
 
-        // проверка, если еда попадает на змею,
-        // то опять перемещаем в случайную координату
-        for(int i = 0; i < snake.size(); i++)
+        for(const auto& food : m_foods)
         {
-            if(m_pSprite_apple->GetPosition().contains(snake[i]->GetPosition()))
+            // проверка, если еда попадает на змею,
+            // то опять перемещаем в случайную координату
+            for(int i = 0; i < snake.size(); i++)
             {
-                //перемещаем яблоко в случайную координату
-                m_pSprite_apple->SetPosition(Random(2, m_col-2)*m_size_cell,
-                                             Random(2, m_row-2)*m_size_cell);
-                break;
+                if(food->GetPosition().contains(snake[i]->GetPosition()))
+                {
+                    //перемещаем яблоко в случайную координату
+                    food->SetPosition(Random(2, m_col-2)*m_size_cell,
+                                      Random(2, m_row-2)*m_size_cell);
+                    break;
+                }
             }
         }
 
@@ -180,12 +199,16 @@ void Widget::timerEvent(QTimerEvent *e)
                }
 
                snake.clear();
+               m_foods.clear();
+
                // ...и опять возрождается
                GameInit();
             }
         }
 
-        m_pSprite_apple->UpdateFrame();
+        for(const auto& food : m_foods)
+            food->UpdateFrame();
+
         m_pSprite_blood->UpdateFrame();
     }
 }
@@ -290,7 +313,8 @@ void Widget::paintEvent(QPaintEvent*)
 
     if(m_pause == false)
     {
-        m_pSprite_apple->Draw(&painter);
+        for(const auto& food : m_foods)
+            food->Draw(&painter);
 
         if(m_pSprite_blood->GetOneFrame())
         {
