@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QBitmap>
 #include <QKeyEvent>
+#include <QEvent>
 #include <QVector>
 
 #include <memory>
@@ -25,6 +26,7 @@ protected:
     void paintEvent(QPaintEvent *);
     void timerEvent(QTimerEvent *);
     void keyPressEvent(QKeyEvent *);
+    void resizeEvent(QResizeEvent *event);
 
 private:
     void GameInit();
@@ -54,7 +56,6 @@ private:
 
     Sprite* m_pSprite_head;
     Sprite* m_pSprite_tail;
-    //Sprite* m_pSprite_apple;
     std::vector<std::unique_ptr<Sprite> > m_foods;
     Sprite* m_pSprite_blood;
 
@@ -71,6 +72,7 @@ private:
     bool m_newItem;
     bool m_pause;
     unsigned int score_;
+    const int COUNT_FOODS = 10;
 };
 
 #endif // WIDGET_H

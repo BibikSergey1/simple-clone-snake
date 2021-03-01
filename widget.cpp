@@ -8,9 +8,9 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget)
 {
     ui->setupUi(this);
-    m_col = 30;
-    m_row = 30;
     m_size_cell = 16;
+    m_col = width()/m_size_cell;
+    m_row = height()/m_size_cell;
     m_width_window = m_col * m_size_cell;
     m_height_window = m_row * m_size_cell;
     resize(m_width_window,m_height_window);
@@ -84,7 +84,7 @@ void Widget::GameInit()
     m_pixmap_angle_tail = m_pixmap_tileset.copy(16*2,0,m_size_cell,m_size_cell);
     m_pixmap_end_tail = m_pixmap_tileset.copy(16*3,0,16,16);
 
-    for (int ii=0; ii < 10; ++ii)
+    for (int ii=0; ii < COUNT_FOODS; ++ii)
     {
         Sprite* pSprite_apple = new Sprite(m_pixmap_tileset.copy(16*5,0,m_size_cell*3,m_size_cell), 3);
         pSprite_apple->SetPosition(Random(2, m_col-2)*m_size_cell,
@@ -104,6 +104,16 @@ void Widget::GameInit()
 int Widget::Random(int low, int high)
 {
     return low + qrand() % ((high + 1) - low);
+}
+
+void Widget::resizeEvent(QResizeEvent *event)
+{
+    m_col = width()/m_size_cell;
+    m_row = height()/m_size_cell;
+
+    m_width_window = m_col * m_size_cell;
+    m_height_window = m_row * m_size_cell;
+    resize(m_width_window,m_height_window);
 }
 
 void Widget::timerEvent(QTimerEvent *e)
@@ -285,14 +295,14 @@ void Widget::paintEvent(QPaintEvent*)
 
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    int side = qMin(width(), height());
+//    int side = qMin(width(), height());
 
-    painter.setViewport((width() - side) / 2, (height() - side) / 2,
-                        side, side);
+//    painter.setViewport((width() - side) / 2, (height() - side) / 2,
+//                        side, side);
 
-    painter.setWindow(0,0,m_size_cell*m_col,m_size_cell*m_row);
+//    painter.setWindow(0,0,m_size_cell*m_col,m_size_cell*m_row);
 
-    painter.drawPixmap(0,0,m_pixmap_background);
+    painter.drawPixmap(0,0,m_width_window,m_height_window,m_pixmap_background);
 
     for(int row=0;row<m_row*m_size_cell;row+=m_size_cell)
         for(int col=0;col<m_col*m_size_cell;col+=m_size_cell)
