@@ -64,20 +64,20 @@ void Widget::GameInit()
 
     m_pixmap_head = m_pixmap_tileset.copy(0,0,m_size_cell,m_size_cell);
     m_pSprite_head = new Sprite(m_pixmap_head, 1, 180);
-    m_pSprite_head->SetPosition(m_width_window/2, m_height_window/2);
+    m_pSprite_head->SetPosition(m_size_cell, (m_row*m_size_cell)/2);
     m_pSprite_head->SetVelocity(16, 0);
     snake.push_back(m_pSprite_head);
 
     m_pixmap_mid_tail = m_pixmap_tileset.copy(16,0,m_size_cell,m_size_cell);
     m_pSprite_tail = new Sprite(m_pixmap_mid_tail, 1);
-    m_pSprite_tail->SetPosition(m_width_window/2 - m_pSprite_tail->GetPosition().width(),
-                               m_height_window/2);
+    m_pSprite_tail->SetPosition(m_size_cell - m_pSprite_tail->GetPosition().width(),
+                               (m_row*m_size_cell)/2);
     m_pSprite_tail->SetVelocity(16, 0);
     snake.push_back(m_pSprite_tail);
 
     m_pSprite_tail = new Sprite(m_pixmap_mid_tail, 1);
-    m_pSprite_tail->SetPosition(m_width_window/2 - m_pSprite_tail->GetPosition().width()*2,
-                               m_height_window/2);
+    m_pSprite_tail->SetPosition(m_size_cell - m_pSprite_tail->GetPosition().width()*2,
+                               (m_row*m_size_cell)/2);
     m_pSprite_tail->SetVelocity(16, 0);
     snake.push_back(m_pSprite_tail);
 
@@ -143,14 +143,12 @@ void Widget::timerEvent(QTimerEvent *e)
             snake.front()->SetPosition((m_width_window-m_size_cell) - snake.front()->GetPosition().width(),
                                        snake.front()->GetPosition().top());
         }
-        else
-        if(snake.front()->GetPosition().right() > m_width_window-m_size_cell)
+        else if(snake.front()->GetPosition().right() > m_width_window-m_size_cell)
             snake.front()->SetPosition(m_size_cell, snake.front()->GetPosition().top());
 
         if(snake.front()->GetPosition().bottom() > m_height_window-m_size_cell)
             snake.front()->SetPosition(snake.front()->GetPosition().left(), m_size_cell);
-        else
-        if(snake.front()->GetPosition().top() < m_size_cell)
+        else if(snake.front()->GetPosition().top() < m_size_cell)
         {
             snake.front()->SetPosition(snake.front()->GetPosition().left(),
                                        m_height_window-m_size_cell-snake.front()->GetPosition().height());
@@ -264,8 +262,7 @@ void Widget::DrawToTurn(QPainter* painter, int i, int a_end, int a_angle)
     m_br = false;
     if(i == snake.size()-1)
         snake[i]->Draw(painter, m_pixmap_end_tail, a_end);
-    else
-    if(m_newItem)
+    else if(m_newItem)
     {
         m_newItem = false;
         snake[i-1]->Draw(painter, m_pixmap_angle_tail, a_angle);
@@ -278,8 +275,7 @@ void Widget::DrawToDir(QPainter* painter, int i, int a_end, int a_mid)
 {
     if(i == snake.size()-1)
         snake[i]->Draw(painter, m_pixmap_end_tail, a_end);
-    else
-    if(m_newItem)
+    else if(m_newItem)
     {
         m_newItem = false;
         if(!m_br || !m_tr)
@@ -304,28 +300,33 @@ void Widget::paintEvent(QPaintEvent*)
 
     painter.drawPixmap(0,0,m_width_window,m_height_window,m_pixmap_background);
 
+    // рисуем границы периметра
     for(int row=0;row<m_row*m_size_cell;row+=m_size_cell)
+    {
         for(int col=0;col<m_col*m_size_cell;col+=m_size_cell)
         {
             if(row == 0 || row == (m_row-1)*m_size_cell ||
                     col == 0 || col == (m_col-1)*m_size_cell)
             {
+                // границу где будет нарисовано количество съеденной еды не рисуем.
                 if(row==0*m_size_cell && (col>=2*m_size_cell && col<=9*m_size_cell))
-                {
                     continue;
-                }
                 else
                     painter.drawPixmap(col,row,m_pixmap_wall);
             }
         }
+    }
 
+    // Рисуем количество съеденной еды
     DrawScore(painter);
 
     if(m_pause == false)
     {
+        // Рисуем еду
         for(const auto& food : m_foods)
             food->Draw(&painter);
 
+        // Рисуем то, что осталось от еды.
         if(m_pSprite_blood->GetOneFrame())
         {
             m_pSprite_blood->Draw(&painter);
@@ -334,66 +335,69 @@ void Widget::paintEvent(QPaintEvent*)
     }
     else
     {
+        // Рисуем паузу
         DrawTextPause(painter);
     }
 
     if(m_pause == false)
     {
-        //head
+        // Рисуем голову змеи head
         if(snake.front()->GetVelocity() == QPoint(0,-16))
             snake.front()->Draw(&painter, m_pixmap_head, 90);
-        else
-        if(snake.front()->GetVelocity() == QPoint(0,16))
+        else if(snake.front()->GetVelocity() == QPoint(0,16))
             snake.front()->Draw(&painter, m_pixmap_head, -90);
-        else
-        if(snake.front()->GetVelocity() == QPoint(-16,0))
+        else if(snake.front()->GetVelocity() == QPoint(-16,0))
             snake.front()->Draw(&painter, m_pixmap_head, 0);
-        else
-        if(snake.front()->GetVelocity() == QPoint(16,0))
+        else if(snake.front()->GetVelocity() == QPoint(16,0))
             snake.front()->Draw(&painter, m_pixmap_head, 180);
 
-
-        for(int i = snake.size()-1;i>0;--i)
+        // Рисуем тело змеи
+        for (int i = snake.size()-1; i > 0; --i)
         {
             if(snake[i]->GetVelocity() == QPoint(-16,0))
             {
-                if(m_tl) DrawToTurn(&painter, i, 90,-90);
+                if(m_tl)
+                    DrawToTurn(&painter, i, 90,-90);
+                else if(m_bl)
+                    DrawToTurn(&painter, i,90,0);
                 else
-                if(m_bl) DrawToTurn(&painter, i,90,0);
-                else DrawToDir(&painter, i,90,0);
+                    DrawToDir(&painter, i,90,0);
 
                 m_br = true;
                 m_tr = true;
             }
-            else
-            if(snake[i]->GetVelocity() == QPoint(16,0))
+            else if(snake[i]->GetVelocity() == QPoint(16,0))
             {
-                if(m_tr) DrawToTurn(&painter, i, -90, 180);
+                if(m_tr)
+                    DrawToTurn(&painter, i, -90, 180);
+                else if(m_br)
+                    DrawToTurn(&painter, i, -90, 90);
                 else
-                if(m_br) DrawToTurn(&painter, i, -90, 90);
-                else DrawToDir(&painter, i,-90,0);
+                    DrawToDir(&painter, i,-90,0);
 
                 m_bl = true;
                 m_tl = true;
             }
-            else
-            if(snake[i]->GetVelocity() == QPoint(0,16))
+            else if(snake[i]->GetVelocity() == QPoint(0,16))
             {
-                if(m_tr) DrawToTurn(&painter, i,0, -180);
+                if(m_tr)
+                    DrawToTurn(&painter, i,0, -180);
+                else if(m_tl)
+                    DrawToTurn(&painter, i, 0,-90);
                 else
-                if(m_tl) DrawToTurn(&painter, i, 0,-90);
-                else DrawToDir(&painter, i,0,90);
+                    DrawToDir(&painter, i,0,90);
 
                 m_bl = true;
                 m_br = true;
             }
-            else
-            if(snake[i]->GetVelocity() == QPoint(0,-16))
+            else if(snake[i]->GetVelocity() == QPoint(0,-16))
             {
-                if(m_br) DrawToTurn(&painter, i,180,90);
+                if(m_br)
+                    DrawToTurn(&painter, i,180,90);
+                else if(m_bl)
+                    DrawToTurn(&painter, i,180,0);
                 else
-                if(m_bl) DrawToTurn(&painter, i,180,0);
-                else DrawToDir(&painter, i,180,90);
+                    DrawToDir(&painter, i,180,90);
 
                 m_tl = true;
                 m_tr = true;
