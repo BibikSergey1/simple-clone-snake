@@ -30,8 +30,8 @@ protected:
 
 private:
     void GameInit();
-    void DrawToTurn(QPainter* painter, int i, int a_end, int a_angle);
-    void DrawToDir(QPainter* painter, int i, int a_end, int a_mid);
+    void DrawItemToTurn(QPainter* painter, const size_t& i, const int& a_end, const int& a_angle);
+    void DrawItemToDir(QPainter* painter, const size_t& i, const int& a_end, const int& a_mid);
     void DrawTextPause(QPainter &p);
     int Random(int low, int high);
     void DrawScore(QPainter& p);
@@ -59,7 +59,7 @@ private:
     std::vector<std::unique_ptr<Sprite> > m_foods;
     Sprite* m_pSprite_blood;
 
-    QVector<Sprite*> snake;
+    std::vector<Sprite*> snake;
 
     int timer_id;
     bool m_test_key;
