@@ -28,7 +28,7 @@ Widget::Widget(QWidget *parent)
 
     GameInit();
 
-    timer_id = startTimer(140);
+    timer_id = startTimer(400);
     m_test_key = false;
 }
 
