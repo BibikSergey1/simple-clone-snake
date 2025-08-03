@@ -1,45 +1,18 @@
-#ifndef SPRITE_H
-#define SPRITE_H
+#pragma once
 
-#include <QtCore>
 #include <QPixmap>
-#include <QPainter>
 
 class Sprite
 {
 public:
-    Sprite(QPixmap& pixmap, int num_frame, qreal angle = 0);
-    Sprite(const QPixmap& pixmap, int num_frame, qreal angle = 0);
+    Sprite(QPixmap &pixmap, int num_frame);
+    ~Sprite();
 
-    QRect& GetPosition(){ return m_rcPosition; }
-    void SetPosition(QRect& rcPosition);
-    void SetPosition(QPoint ptPosition);
-    void SetPosition(int x, int y);
+    void draw(QPainter *painter, int x, int y);
+    void updateFrame();
 
-    QPoint GetVelocity() { return m_ptVelocity; }
-    void SetVelocity(QPoint ptVelocity);
-    void SetVelocity(int x, int y);
-
-    void Draw(QPainter* painter);
-    void Draw(QPainter* painter, QPixmap& pixmap, qreal angle = 0);
-
-    QPixmap MyTransform(QPixmap& pixmap, qreal angle);
-    QPixmap MyTransform(const QPixmap& pixmap, qreal angle);
-
-    void UpdateFrame();
-    void SetOneFrame(bool one_frame) {m_bOneFrame = one_frame;}
-    bool GetOneFrame() {return m_bOneFrame;}
-
-    void SetFrameRate(float rate) {m_fFrameRate = rate;}
-
-protected:
-    QRect m_rcPosition;
-    QPoint m_ptVelocity;
-    QPixmap m_Pixmap;
+    QPixmap &m_Pixmap;
     float m_currFrame;
-    int m_iNumFrames;
-    bool m_bOneFrame;
-    float m_fFrameRate;
+    int m_numFrames;
 };
 
-#endif // SPRITE_H

@@ -1,25 +1,44 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2016-04-01T11:26:38
-#
-#-------------------------------------------------
-
 QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = Snake
-TEMPLATE = app
+CONFIG += c++17
 
+# You can make your code fail to compile if it uses deprecated APIs.
+# In order to do so, uncomment the following line.
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-SOURCES += main.cpp\
-        widget.cpp \
-    sprite.cpp
+SOURCES += \
+    DlgGameUserSettings.cpp \
+    Foods.cpp \
+    Game.cpp \
+    GameUserSettings.cpp \
+    GameWidget.cpp \
+    MainWidget.cpp \
+    Snake.cpp \
+    Sprite.cpp \
+    StartWidget.cpp \
+    main.cpp
 
-HEADERS  += widget.h \
-    sprite.h
+HEADERS += \
+    DlgGameUserSettings.h \
+    Foods.h \
+    Game.h \
+    GameUserSettings.h \
+    GameWidget.h \
+    MainWidget.h \
+    Snake.h \
+    Sprite.h \
+    StartWidget.h
 
-FORMS    += widget.ui
+FORMS += \
+    DlgGameUserSettings.ui \
+    MainWidget.ui
+
+# Default rules for deployment.
+qnx: target.path = /tmp/$${TARGET}/bin
+else: unix:!android: target.path = /opt/$${TARGET}/bin
+!isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
     images.qrc
