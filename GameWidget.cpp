@@ -73,7 +73,6 @@ GameWidget::~GameWidget()
 
 void GameWidget::startGame()
 {
-    qDebug() << "GameWidget::startGame============game->delay = " << game->delay;
     timerId = startTimer(game->delay);
     game->setSnakePosition(game->gameFieldCols, game->gameFieldRows);
     game->setFoodsPosition();
@@ -81,7 +80,6 @@ void GameWidget::startGame()
 
 void GameWidget::setGameSettings(int cols, int rows, int countFoods, int delay)
 {
-    qDebug() << "GameWidget::setGameSettings============delay = " << delay;
     game->delay = delay;
     game->gameFieldCols = cols;
     game->gameFieldRows = rows;
@@ -163,6 +161,11 @@ void GameWidget::timerEvent(QTimerEvent *e)
     }
 
     game->update();
+
+    for (size_t ii = 0; ii < game->foods->foodItems.size(); ++ii)
+    {
+        foodSprite->updateFrame(ii);
+    }
 
     game->snakeDied = game->snake->isBitYourself();
     if (game->snakeDied)
@@ -455,15 +458,13 @@ void GameWidget::drawSnake(QPainter &painter)
 
 void GameWidget::drawFoods(QPainter &painter)
 {
-    foodSprite->updateFrame();
-
     // Рисуем еду для змеи
     //painter.setBrush(Qt::darkGreen);
-    for(const auto &food : game->foods->foodItems)
+    for(size_t ii = 0; ii < game->foods->foodItems.size(); ++ii)
     {
         //painter.drawEllipse(food->x, food->y, food->w, food->h);
         //painter.drawPixmap(food->x, food->y, food->w, food->h, pixFood);
-        foodSprite->draw(&painter, food->x, food->y);
+        foodSprite->draw(&painter, game->foods->foodItems[ii]->x, game->foods->foodItems[ii]->y, ii);
     }
 }
 
