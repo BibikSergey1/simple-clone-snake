@@ -33,6 +33,7 @@ private:
     void drawGreed(QPainter &painter, bool isGreed = true);
     void drawFoods(QPainter &painter);
     void drawGameFiled(QPainter &painter);
+    void createfoodSprites();
 
     QPixmap pixSnakeLeftHead;
     QPixmap pixSnakeRightHead;
@@ -59,7 +60,7 @@ private:
 
     QPixmap pixGameField;
     QPixmap pixFood;
-    std::unique_ptr<Sprite> foodSprite;
+    std::vector<std::unique_ptr<Sprite>> foodSprites;
 
     int pixSize = 16;
     int timerId = -1;
