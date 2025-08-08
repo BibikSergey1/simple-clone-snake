@@ -33,7 +33,7 @@ private:
     void drawGreed(QPainter &painter, bool isGreed = true);
     void drawFoods(QPainter &painter);
     void drawGameFiled(QPainter &painter);
-    void createfoodSprites();
+    void createFoodSprites();
 
     QPixmap pixSnakeLeftHead;
     QPixmap pixSnakeRightHead;

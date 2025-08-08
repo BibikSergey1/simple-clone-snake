@@ -63,7 +63,7 @@ GameWidget::GameWidget(int cols, int rows, int countFoods, QWidget *parent)
     // pixFood.scaled(game->cellSize, game->cellSize);
     pixFood = pixTileset.copy(pixSize * 9, 0, pixSize * 4, pixSize);
     pixFood.scaled(game->cellSize * 4, game->cellSize);
-    createfoodSprites();
+    createFoodSprites();
 
     qApp->setOverrideCursor(Qt::ArrowCursor);
 }
@@ -71,18 +71,18 @@ GameWidget::GameWidget(int cols, int rows, int countFoods, QWidget *parent)
 GameWidget::~GameWidget()
 {}
 
-void GameWidget::createfoodSprites()
+void GameWidget::createFoodSprites()
 {
     for (size_t ii = 0; ii < game->foods->foodItems.size(); ++ii)
     {
         Sprite *foodSprite = new Sprite(pixFood, 4);
         if (ii % 2 == 0)
         {
-            foodSprite->frameRate = 1;
+            foodSprite->frameDelay = 1;
         }
         else
         {
-            foodSprite->frameRate = 0.6f;
+            foodSprite->frameDelay = 0.6f;
         }
         foodSprites.emplace_back(foodSprite);
     }
@@ -109,7 +109,7 @@ void GameWidget::setGameSettings(int cols, int rows, int countFoods, int delay)
         game->foods->createFoods(countFoods, 1, 1, cols, rows, game->cellSize);
     }
     foodSprites.clear();
-    createfoodSprites();
+    createFoodSprites();
 
     game->setSnakePosition(cols + 1, rows + 1);
 }
