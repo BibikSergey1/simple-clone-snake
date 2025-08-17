@@ -96,11 +96,15 @@ void Game::setDirection(const int &dir)
 
 void Game::update()
 {
+    const auto& head = snake->items.front();
+    int head_cx = head->x + (head->w / 2), // computer center of head
+        head_cy = head->y + (head->h / 2);
+
     // Проверка еды
     for (const auto& food : foods->foodItems)
     {
-        int head_cx = snake->items.front()->x + (snake->items.front()->w / 2),  // computer center of head
-            head_cy = snake->items.front()->y + (snake->items.front()->h) / 2;
+        // int head_cx = snake->items.front()->x + (snake->items.front()->w / 2),  // computer center of head
+        //     head_cy = snake->items.front()->y + (snake->items.front()->h) / 2;
 
         // test for collision with food
         if ((head_cx >= food->x && head_cx <= food->x + food->w) &&
