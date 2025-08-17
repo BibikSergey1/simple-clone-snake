@@ -103,9 +103,6 @@ void Game::update()
     // Проверка еды
     for (const auto& food : foods->foodItems)
     {
-        // int head_cx = snake->items.front()->x + (snake->items.front()->w / 2),  // computer center of head
-        //     head_cy = snake->items.front()->y + (snake->items.front()->h) / 2;
-
         // test for collision with food
         if ((head_cx >= food->x && head_cx <= food->x + food->w) &&
             (head_cy >= food->y && head_cy <= food->y + food->h))
