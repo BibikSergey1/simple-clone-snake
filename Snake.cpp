@@ -3,7 +3,7 @@
 #include <QDebug>
 
 Snake::Snake(int headX, int headY, int directionX, int directionY, std::size_t maxCells)
-    : testKeys(false)
+    : canChangeDirection(false)
     , headX(headX)
     , headY(headY)
     , directionX(directionX)
@@ -45,7 +45,7 @@ void Snake::addSnakeItem()
 
 void Snake::changeDirectionHead(int dx, int dy)
 {
-    testKeys = false;
+    canChangeDirection = false;// Запрещаем до следующего движения
 
     items[0]->dx = dx;
     items[0]->dy = dy;
@@ -53,7 +53,10 @@ void Snake::changeDirectionHead(int dx, int dy)
 
 void Snake::move()
 {
-    //змея ползет
+    if (items.empty())
+        return; // Защита от пустой змеи
+
+    // Двигаем сегменты с хвоста к голове
     for (int ii = items.size() - 1; ii > 0; --ii)
     {
         items[ii]->x = items[ii - 1]->x;
@@ -62,10 +65,12 @@ void Snake::move()
         items[ii]->dy = items[ii - 1]->dy;
     }
 
-    items[0]->x += items[0]->dx;
-    items[0]->y += items[0]->dy;
+    // Двигаем голову
+    Item &head = *items[0];
+    head.x += head.dx;
+    head.y += head.dy;
 
-    testKeys = true;
+    canChangeDirection = true; // Разрешаем обработку ввода после движения
 }
 
 void Snake::checkBoundsGameField(const int &gameFieldX, const int &gameFieldY,

@@ -4,6 +4,8 @@
 
 class Snake;
 class Foods;
+class Item;
+class Point;
 
 class Game
 {
@@ -53,6 +55,23 @@ public:
     bool snakeDied = false;
 
 private:
+    void checkFoodCollisions();
+    bool isCollision(int head_cx, int head_cy,
+                     const std::unique_ptr<Item> &food) const;
+
+    void handleFoodCollision(std::unique_ptr<Item> &food);
+    bool canSpawnMoreFood() const;
+    void relocateFood(std::unique_ptr<Item> &food);
+    Point generateRandomFoodPosition() const;
+    bool isFoodPositionInvalid(const Point &position,
+                               const std::unique_ptr<Item>& currentFood) const;
+
+    void hideFood(std::unique_ptr<Item> &food);
+
+    static const int HIDDEN_FOOD_X = -9999;
+    static const int HIDDEN_FOOD_Y = -9999;
+    static const int headTailGap = 1;
+
     //void updateHiScores();
     //bool writeHiScores();
     //bool readHiScores();

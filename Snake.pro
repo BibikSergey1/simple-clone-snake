@@ -15,6 +15,7 @@ SOURCES += \
     GameUserSettings.cpp \
     GameWidget.cpp \
     MainWidget.cpp \
+    Point.cpp \
     Snake.cpp \
     Sprite.cpp \
     StartWidget.cpp \
@@ -27,6 +28,7 @@ HEADERS += \
     GameUserSettings.h \
     GameWidget.h \
     MainWidget.h \
+    Point.h \
     Snake.h \
     Sprite.h \
     StartWidget.h

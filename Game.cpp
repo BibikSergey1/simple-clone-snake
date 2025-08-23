@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "Snake.h"
 #include "Foods.h"
+#include "Point.h"
 //#include <fstream>
 #include <time.h>
 #include <QDebug>
@@ -70,7 +71,7 @@ void Game::initGameField(int fieldCols, int fieldRows)
 
 void Game::setDirection(const int &dir)
 {
-    if ((snake->items.front()->dy > 0 || snake->items.front()->dy < 0) && snake->testKeys)
+    if ((snake->items.front()->dy > 0 || snake->items.front()->dy < 0) && snake->canChangeDirection)
     {
         if (dir == DIR_LEFT)
         {
@@ -81,7 +82,7 @@ void Game::setDirection(const int &dir)
             snake->changeDirectionHead(cellSize, 0);
         }
     }
-    else if ((snake->items.front()->dx > 0 || snake->items.front()->dx < 0) && snake->testKeys)
+    else if ((snake->items.front()->dx > 0 || snake->items.front()->dx < 0) && snake->canChangeDirection)
     {
         if (dir == DIR_UP)
         {
@@ -96,73 +97,114 @@ void Game::setDirection(const int &dir)
 
 void Game::update()
 {
-    const auto& head = snake->items.front();
-    int head_cx = head->x + (head->w / 2), // computer center of head
-        head_cy = head->y + (head->h / 2);
-
-    // Проверка еды
-    for (const auto& food : foods->foodItems)
-    {
-        // test for collision with food
-        if ((head_cx >= food->x && head_cx <= food->x + food->w) &&
-            (head_cy >= food->y && head_cy <= food->y + food->h))
-        {
-            //и растет
-            snake->addSnakeItem();
-            isNewSnakeItem = true;
-
-            // проверка, чтоб еду не бросить на змею
-            int i, food_x, food_y;
-            int sizeSnake = snake->items.size();
-
-            do
-            {
-                food_x = foods->random(1, gameFieldCols - 1) * cellSize;
-                food_y = foods->random(1, gameFieldRows - 1) * cellSize;
-
-                for (i = 0; i < sizeSnake; ++i)
-                {
-                    if (food_x == snake->items.at(i)->x && food_y == snake->items.at(i)->y)
-                        break;
-                }
-
-                // проверка, чтоб еда не попала на еду.
-                for (size_t ii = 0; ii < foods->foodItems.size(); ++ii)
-                {
-                    if (food_x == foods->foodItems[ii]->x && food_y == foods->foodItems[ii]->y)
-                    {
-                        if (i >= sizeSnake)
-                        {
-                            i = 0;
-                        }
-                        break;
-                    }
-                }
-
-                if (sizeSnake >= (maxCells - countFoods + 1))
-                {
-                    break;
-                }
-            }
-            while (i < sizeSnake);
-
-            if (sizeSnake < (maxCells - countFoods + 1))
-            {
-                food->x = food_x; //
-                food->y = food_y; //запоминаем позицию еды
-            }
-            else
-            {
-                food->x = -cellSize;
-                food->y = -cellSize;
-            }
-        }
-    }
-
+    checkFoodCollisions();
     //qDebug() << "======snake->items.capacity = " << snake->items.capacity();
     snake->move();
-
     snake->checkBoundsGameField(gameFieldX, gameFieldY, gameFieldWidth, gameFieldHeight);
+}
+
+void Game::checkFoodCollisions()
+{
+    const auto &head = snake->items.front();
+    int head_cx = head->x + (head->w / 2);
+    int head_cy = head->y + (head->h / 2);
+
+    for (auto &food : foods->foodItems)
+    {
+        if (isCollision(head_cx, head_cy, food))
+        {
+            handleFoodCollision(food);
+        }
+    }
+}
+
+bool Game::isCollision(int head_cx, int head_cy,
+                       const std::unique_ptr<Item>& food) const
+{
+    return (head_cx >= food->x && head_cx <= food->x + food->w) &&
+           (head_cy >= food->y && head_cy <= food->y + food->h);
+}
+
+void Game::handleFoodCollision(std::unique_ptr<Item> &food)
+{
+    snake->addSnakeItem();
+    isNewSnakeItem = true;
+
+    if (canSpawnMoreFood())
+    {
+        relocateFood(food);
+    }
+    else
+    {
+        hideFood(food);
+    }
+}
+
+void Game::hideFood(std::unique_ptr<Item> &food)
+{
+    if (food)
+    {
+        food->x = HIDDEN_FOOD_X;
+        food->y = HIDDEN_FOOD_Y;
+    }
+}
+
+bool Game::canSpawnMoreFood() const
+{
+    // Вычисляем количество свободных клеток на игровом поле
+    const int totalCells = gameFieldCols * gameFieldRows;
+    const int occupiedCells = snake->items.size() + foods->foodItems.size();
+    const int freeCells = totalCells - occupiedCells;
+
+    // Минимальное количество свободных клеток для генерации новой еды
+    constexpr int MIN_FREE_CELLS = 1;
+
+    // Также проверяем, не достигли ли мы максимального количества клеток змеи
+    const bool hasSpaceForSnake = snake->items.size() < (maxCells - foods->foodItems.size() + headTailGap);
+
+    return freeCells >= MIN_FREE_CELLS && hasSpaceForSnake;
+}
+
+void Game::relocateFood(std::unique_ptr<Item> &food)
+{
+    Point newPosition;
+    do
+    {
+        newPosition = generateRandomFoodPosition();
+    } while (isFoodPositionInvalid(newPosition, food));
+
+    food->x = newPosition.x;
+    food->y = newPosition.y;
+}
+
+Point Game::generateRandomFoodPosition() const
+{
+    const int margin = 1; // Вместо магического числа 1
+    return {
+        foods->random(margin, gameFieldCols - margin) * cellSize,
+        foods->random(margin, gameFieldRows - margin) * cellSize
+    };
+}
+
+bool Game::isFoodPositionInvalid(const Point &position,
+                                 const std::unique_ptr<Item>& currentFood) const
+{
+    // Проверка на змею
+    for (const auto& snakeItem : snake->items)
+    {
+        if (position.x == snakeItem->x && position.y == snakeItem->y)
+            return true;
+    }
+
+    // Проверка на другую еду
+    for (const auto& otherFood : foods->foodItems)
+    {
+        if (otherFood.get() != currentFood.get() && // Исключаем текущую еду
+            position.x == otherFood->x && position.y == otherFood->y)
+            return true;
+    }
+
+    return false;
 }
 
 void Game::reborn()

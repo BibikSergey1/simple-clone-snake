@@ -30,9 +30,10 @@ public:
 
     std::vector<std::unique_ptr<Item>> items;
 
-    // проверка на быстрое нажатие клавиш, когда голова змеи входит в свое тело.
-    // например: голова змеи движется влево, игрок нажимает быстро клавиши вниз и вправо.
-    bool testKeys;
+    // Защита от быстрой смены направления, которая может привести к столкновению с телом.
+    // Пример: при движении влево быстрое нажатие вниз→вправо может создать ситуацию,
+    // когда змея развернется и врежется в собственное тело.
+    bool canChangeDirection;
 
 private:
     void create(int xHead, int yHead, int directionX, int directionY, int snakeItemSize, int countSnakeItem);
