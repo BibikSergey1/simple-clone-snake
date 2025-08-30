@@ -29,7 +29,11 @@ private:
 
     void drawSnake(QPainter &painter);
     void drawHead(QPainter &painter, bool isDied) const;
-    void drawBody(QPainter &painter, const size_t &index);
+    //void drawBody(QPainter &painter, const size_t &index);
+    void drawBody(QPainter &painter, size_t index);
+    void drawTail(QPainter &painter, const std::unique_ptr<Item> &segment, int x, int y, int w, int h);
+    void drawStraightBody(QPainter &painter, const std::unique_ptr<Item> &segment, int x, int y, int w, int h);
+    void drawTurnBody(QPainter &painter, const std::unique_ptr<Item> &current, const std::unique_ptr<Item> &next);
     void drawGreed(QPainter &painter, bool isGreed = true);
     void drawFoods(QPainter &painter);
     void drawGameFiled(QPainter &painter);
