@@ -19,8 +19,8 @@ public:
     Snake(int headX, int headY, int directionX, int directionY, std::size_t maxCells);
 
     void move();
-    void checkBoundsGameField(const int &gameFieldX, const int &gameFieldY,
-                              const int &gameFieldWidth, const int &gameFieldHeight);
+    void checkBoundsGameField(int gameFieldX, int gameFieldY,
+                              int gameFieldWidth, int gameFieldHeight);
 
     bool isBitYourself();
     void removeSnake();// умирает

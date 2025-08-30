@@ -73,34 +73,34 @@ void Snake::move()
     canChangeDirection = true; // Разрешаем обработку ввода после движения
 }
 
-void Snake::checkBoundsGameField(const int &gameFieldX, const int &gameFieldY,
-                                 const int &gameFieldWidth, const int &gameFieldHeight)
+void Snake::checkBoundsGameField(int gameFieldX, int gameFieldY,
+                                 int gameFieldWidth, int gameFieldHeight)
 {
     //змея выходит за пределы игрового поля
 
-    // Проверка левой границы по координате X
-    if(items[0]->x < gameFieldX)
+    if (items.empty())
+        return;
+
+    Item &head = *items[0];
+
+    // Проверка X-координаты (горизонтальные границы)
+    if (head.x < gameFieldX)
     {
-        items[0]->x = gameFieldWidth - items[0]->w;
-        items[0]->y = items[0]->y;
+        head.x = gameFieldWidth - head.w; // Телепорт справа
     }
-    // Проверка правой границы по координате X
-    else if(items[0]->x > gameFieldWidth - items[0]->w)
+    else if (head.x + head.w > gameFieldWidth)
     {
-        items[0]->x = gameFieldX;
-        items[0]->y = items[0]->y;
+        head.x = gameFieldX; // Телепорт слева
     }
-    // Проверка нижней границы по координате Y
-    if(items[0]->y > gameFieldHeight - items[0]->h)
+
+    // Проверка Y-координаты (вертикальные границы) - независимо от X
+    if (head.y < gameFieldY)
     {
-        items[0]->x = items[0]->x;
-        items[0]->y = gameFieldY;
+        head.y = gameFieldHeight - head.h; // Телепорт снизу
     }
-    // Проверка верхней границы по координате Y
-    else if(items[0]->y < gameFieldY)
+    else if (head.y + head.h > gameFieldHeight)
     {
-        items[0]->x = items[0]->x;
-        items[0]->y = gameFieldHeight - items[0]->h;
+        head.y = gameFieldY; // Телепорт сверху
     }
 }
 
