@@ -69,31 +69,77 @@ void Game::initGameField(int fieldCols, int fieldRows)
     maxCells = (gameFieldCols - 1) * (gameFieldRows - 1);
 }
 
-void Game::setDirection(const int &dir)
+void Game::setDirection(Direction direction)
 {
-    if ((snake->items.front()->dy > 0 || snake->items.front()->dy < 0) && snake->canChangeDirection)
+    if (!snake || !snake->canChangeDirection || snake->items.empty())
+        return;
+
+    const auto &head = snake->items.front();
+
+    // Проверяем, движется ли змея вертикально
+    if (head->dy != 0)
     {
-        if (dir == DIR_LEFT)
+        if (direction == Direction::LEFT)
         {
             snake->changeDirectionHead(-cellSize, 0);
         }
-        else if (dir == DIR_RIGHT)
+        else if (direction == Direction::RIGHT)
         {
             snake->changeDirectionHead(cellSize, 0);
         }
     }
-    else if ((snake->items.front()->dx > 0 || snake->items.front()->dx < 0) && snake->canChangeDirection)
+    // Проверяем, движется ли змея горизонтально
+    else if (head->dx != 0)
     {
-        if (dir == DIR_UP)
+        if (direction == Direction::UP)
         {
             snake->changeDirectionHead(0, -cellSize);
         }
-        else if (dir == DIR_DOWN)
+        else if (direction == Direction::DOWN)
         {
             snake->changeDirectionHead(0, cellSize);
         }
     }
+    // Если змея не движется (начало игры)
+    else
+    {
+        // Разрешаем любое направление для старта
+        switch (direction)
+        {
+        case Direction::LEFT: snake->changeDirectionHead(-cellSize, 0); break;
+        case Direction::RIGHT: snake->changeDirectionHead(cellSize, 0); break;
+        case Direction::UP: snake->changeDirectionHead(0, -cellSize); break;
+        case Direction::DOWN: snake->changeDirectionHead(0, cellSize); break;
+        case Direction::NONE: snake->changeDirectionHead(0, 0); break;
+        }
+    }
 }
+
+// void Game::setDirection(const int &dir)
+// {
+//     if ((snake->items.front()->dy > 0 || snake->items.front()->dy < 0) && snake->canChangeDirection)
+//     {
+//         if (dir == DIR_LEFT)
+//         {
+//             snake->changeDirectionHead(-cellSize, 0);
+//         }
+//         else if (dir == DIR_RIGHT)
+//         {
+//             snake->changeDirectionHead(cellSize, 0);
+//         }
+//     }
+//     else if ((snake->items.front()->dx > 0 || snake->items.front()->dx < 0) && snake->canChangeDirection)
+//     {
+//         if (dir == DIR_UP)
+//         {
+//             snake->changeDirectionHead(0, -cellSize);
+//         }
+//         else if (dir == DIR_DOWN)
+//         {
+//             snake->changeDirectionHead(0, cellSize);
+//         }
+//     }
+// }
 
 void Game::update()
 {
@@ -119,7 +165,7 @@ void Game::checkFoodCollisions()
 }
 
 bool Game::isCollision(int head_cx, int head_cy,
-                       const std::unique_ptr<Item>& food) const
+                       const std::unique_ptr<Item> &food) const
 {
     return (head_cx >= food->x && head_cx <= food->x + food->w) &&
            (head_cy >= food->y && head_cy <= food->y + food->h);
@@ -171,7 +217,8 @@ void Game::relocateFood(std::unique_ptr<Item> &food)
     do
     {
         newPosition = generateRandomFoodPosition();
-    } while (isFoodPositionInvalid(newPosition, food));
+    }
+    while (isFoodPositionInvalid(newPosition, food));
 
     food->x = newPosition.x;
     food->y = newPosition.y;
@@ -187,7 +234,7 @@ Point Game::generateRandomFoodPosition() const
 }
 
 bool Game::isFoodPositionInvalid(const Point &position,
-                                 const std::unique_ptr<Item>& currentFood) const
+                                 const std::unique_ptr<Item> &currentFood) const
 {
     // Проверка на змею
     for (const auto& snakeItem : snake->items)

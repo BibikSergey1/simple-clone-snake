@@ -13,9 +13,10 @@ public:
     Game(int cols, int rows, int countFoods);
     ~Game();
 
-    void initGameField(int fieldCols, int fieldRows);
+    enum class Direction {LEFT, RIGHT, UP, DOWN, NONE};
 
-    void setDirection(const int &dir);
+    void initGameField(int fieldCols, int fieldRows);
+    void setDirection(Direction direction);
 
     void update();
     void reborn();
@@ -49,8 +50,6 @@ public:
 
     bool isPause = false;
 
-    enum {DIR_LEFT, DIR_RIGHT, DIR_UP, DIR_DOWN};
-
     int maxCells;
     bool snakeDied = false;
 
@@ -64,7 +63,7 @@ private:
     void relocateFood(std::unique_ptr<Item> &food);
     Point generateRandomFoodPosition() const;
     bool isFoodPositionInvalid(const Point &position,
-                               const std::unique_ptr<Item>& currentFood) const;
+                               const std::unique_ptr<Item> &currentFood) const;
 
     void hideFood(std::unique_ptr<Item> &food);
 

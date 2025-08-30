@@ -47,8 +47,9 @@ void Snake::changeDirectionHead(int dx, int dy)
 {
     canChangeDirection = false;// Запрещаем до следующего движения
 
-    items[0]->dx = dx;
-    items[0]->dy = dy;
+    Item &head = *items[HEAD_INDEX];
+    head.dx = dx;
+    head.dy = dy;
 }
 
 void Snake::move()
@@ -57,7 +58,7 @@ void Snake::move()
         return; // Защита от пустой змеи
 
     // Двигаем сегменты с хвоста к голове
-    for (int ii = items.size() - 1; ii > 0; --ii)
+    for (int ii = items.size() - 1; ii > HEAD_INDEX; --ii)
     {
         items[ii]->x = items[ii - 1]->x;
         items[ii]->y = items[ii - 1]->y;
@@ -66,7 +67,7 @@ void Snake::move()
     }
 
     // Двигаем голову
-    Item &head = *items[0];
+    Item &head = *items[HEAD_INDEX];
     head.x += head.dx;
     head.y += head.dy;
 
@@ -81,7 +82,7 @@ void Snake::checkBoundsGameField(int gameFieldX, int gameFieldY,
     if (items.empty())
         return;
 
-    Item &head = *items[0];
+    Item &head = *items[HEAD_INDEX];
 
     // Проверка X-координаты (горизонтальные границы)
     if (head.x < gameFieldX)

@@ -133,16 +133,16 @@ void GameWidget::keyPressEvent(QKeyEvent *event)
     switch(event->key())
     {
     case Qt::Key_Left:
-        game->setDirection(Game::DIR_LEFT);
+        game->setDirection(Game::Direction::LEFT);
         break;
     case Qt::Key_Right:
-        game->setDirection(Game::DIR_RIGHT);
+        game->setDirection(Game::Direction::RIGHT);
         break;
     case Qt::Key_Up:
-        game->setDirection(Game::DIR_UP);
+        game->setDirection(Game::Direction::UP);
         break;
     case Qt::Key_Down:
-        game->setDirection(Game::DIR_DOWN);
+        game->setDirection(Game::Direction::DOWN);
         break;
     case Qt::Key_Space:
         game->isPause = !game->isPause;

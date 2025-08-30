@@ -44,4 +44,5 @@ private:
     int directionY;
     int snakeItemSize = 16;
     int countSnakeItem = 3;
+    static const int HEAD_INDEX = 0;
 };
