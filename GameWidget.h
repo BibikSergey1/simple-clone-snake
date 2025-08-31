@@ -39,6 +39,16 @@ private:
     void drawGameFiled(QPainter &painter);
     void createFoodSprites();
 
+    void handlePauseState();
+    void updateGameState();
+    void checkGameConditions();
+    bool checkSnakeDeath() const;
+    bool checkWinCondition() const;
+    void handleGameOver();
+    void handleWin();
+    void showMessage(const QString &message);
+    void restartGame();
+
     QPixmap pixSnakeLeftHead;
     QPixmap pixSnakeRightHead;
     QPixmap pixSnakeUpHead;

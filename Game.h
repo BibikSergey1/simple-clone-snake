@@ -30,7 +30,7 @@ public:
 
     int delay = 450;
 
-    int countCellsForWin = 0;
+    size_t countCellsForWin = 0;
     bool isNewSnakeItem = false;
     const int cellSize = 16;
 

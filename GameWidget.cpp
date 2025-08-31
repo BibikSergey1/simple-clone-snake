@@ -169,47 +169,104 @@ void GameWidget::keyPressEvent(QKeyEvent *event)
     }
 }
 
-void GameWidget::timerEvent(QTimerEvent *e)
+void GameWidget::timerEvent(QTimerEvent* event)
 {
-    if(timerId != e->timerId())
+    if (timerId != event->timerId())
         return;
 
-    if (game->isPause)
-    {
-        update();
+    if (!game || !game->snake)
         return;
-    }
 
-    game->update();
+    handlePauseState();
 
-    for (size_t ii = 0; ii < foodSprites.size(); ++ii)
+    if (!game->isPause)
     {
-        foodSprites[ii]->updateFrame();
-    }
-
-    game->snakeDied = game->snake->isBitYourself();
-    if (game->snakeDied)
-    {
-        qApp->setOverrideCursor(Qt::ArrowCursor);
-        QMessageBox::information(nullptr, QStringLiteral("Information"), QStringLiteral("Game Over"));
-        game->reborn();
-        game->snakeDied = false;
-
-        emit signalStopGame();
-        return;
-    }
-
-    if (static_cast<int>(game->snake->items.size()) == game->countCellsForWin)
-    {
-        qApp->setOverrideCursor(Qt::ArrowCursor);
-        QMessageBox::information(nullptr, QStringLiteral("Information"), QStringLiteral("You WIN!!!"));
-        game->reborn();
-
-        emit signalStopGame();
-        return;
+        updateGameState();
+        checkGameConditions();
     }
 
     update();
+}
+
+void GameWidget::handlePauseState()
+{
+    if (game->isPause)
+    {
+        // Только обновляем отрисовку для показа паузы
+        return;
+    }
+}
+
+void GameWidget::updateGameState()
+{
+    game->update();
+
+    // Обновляем анимации еды
+    for (const auto &foodSprite : foodSprites)
+    {
+        if (foodSprite)
+        {
+            foodSprite->updateFrame();
+        }
+    }
+}
+
+void GameWidget::checkGameConditions()
+{
+    if (checkSnakeDeath())
+    {
+        handleGameOver();
+        return;
+    }
+
+    if (checkWinCondition())
+    {
+        handleWin();
+        return;
+    }
+}
+
+bool GameWidget::checkSnakeDeath() const
+{
+    return game->snake->isBitYourself();
+}
+
+bool GameWidget::checkWinCondition() const
+{
+    return game->snake->items.size() >= game->countCellsForWin;
+}
+
+void GameWidget::handleGameOver()
+{
+    showMessage(QStringLiteral("Game Over"));
+    restartGame();
+    emit signalStopGame();
+}
+
+void GameWidget::handleWin()
+{
+    showMessage(QStringLiteral("You WIN!!!"));
+    restartGame();
+    emit signalStopGame();
+}
+
+void GameWidget::showMessage(const QString &message)
+{
+    // Восстанавливаем курсор только для диалога
+    const QCursor originalCursor = cursor();
+    setCursor(Qt::ArrowCursor);
+
+    QMessageBox::information(this, QStringLiteral("Information"), message);
+
+    setCursor(originalCursor); // Восстанавливаем оригинальный курсор
+}
+
+void GameWidget::restartGame()
+{
+    if (game)
+    {
+        game->reborn();
+    }
 }
 
 void GameWidget::paintEvent(QPaintEvent*)
