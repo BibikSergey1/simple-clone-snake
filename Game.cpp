@@ -14,7 +14,8 @@ Game::Game(int cols, int rows, int countFoods)
     snake = std::make_unique<Snake>(getXPositionHead(cols), getYPositionHead(rows),
                                     -cellSize, 0, maxCells);
 
-    foods = std::make_unique<Foods>(countFoods, 1, 1, gameFieldCols - 1, gameFieldRows - 1, cellSize);
+    srand((unsigned)time(NULL));
+    foods = std::make_unique<Foods>(countFoods, random(1, gameFieldCols - 1), random(1, gameFieldRows - 1), cellSize);
 
     countCellsForWin = maxCells;
 }
@@ -39,11 +40,12 @@ void Game::setSnakePosition(int countColumns, int countRows)
     int offsetXSnakeItem = 0;
     for (size_t ii = 0; ii < snake->items.size(); ++ii)
     {
-        snake->items[ii]->x = getXPositionHead(countColumns) + offsetXSnakeItem;
+        Item &currItem = *snake->items[ii];
+        currItem.x = getXPositionHead(countColumns) + offsetXSnakeItem;
         offsetXSnakeItem += cellSize;
-        snake->items[ii]->y = getYPositionHead(countRows);
-        snake->items[ii]->dx = -cellSize;
-        snake->items[ii]->dy = 0;
+        currItem.y = getYPositionHead(countRows);
+        currItem.dx = -cellSize;
+        currItem.dy = 0;
     }
 }
 
@@ -51,11 +53,16 @@ void Game::setFoodsPosition()
 {
     for (size_t ii = 0; ii < foods->foodItems.size(); ++ii)
     {
-        foods->foodItems[ii]->x = foods->random(1, gameFieldCols - 1) * cellSize;
-        foods->foodItems[ii]->y = foods->random(1, gameFieldRows - 1) * cellSize;
+        foods->foodItems[ii]->x = random(1, gameFieldCols - 1) * cellSize;
+        foods->foodItems[ii]->y = random(1, gameFieldRows - 1) * cellSize;
         foods->foodItems[ii]->w = cellSize;
         foods->foodItems[ii]->h = cellSize;
     }
+}
+
+int Game::random(int low, int high) const
+{
+    return low + rand() % ((high + 1) - low);
 }
 
 void Game::initGameField(int fieldCols, int fieldRows)
@@ -114,32 +121,6 @@ void Game::setDirection(Direction direction)
         }
     }
 }
-
-// void Game::setDirection(const int &dir)
-// {
-//     if ((snake->items.front()->dy > 0 || snake->items.front()->dy < 0) && snake->canChangeDirection)
-//     {
-//         if (dir == DIR_LEFT)
-//         {
-//             snake->changeDirectionHead(-cellSize, 0);
-//         }
-//         else if (dir == DIR_RIGHT)
-//         {
-//             snake->changeDirectionHead(cellSize, 0);
-//         }
-//     }
-//     else if ((snake->items.front()->dx > 0 || snake->items.front()->dx < 0) && snake->canChangeDirection)
-//     {
-//         if (dir == DIR_UP)
-//         {
-//             snake->changeDirectionHead(0, -cellSize);
-//         }
-//         else if (dir == DIR_DOWN)
-//         {
-//             snake->changeDirectionHead(0, cellSize);
-//         }
-//     }
-// }
 
 void Game::update()
 {
@@ -228,8 +209,8 @@ Point Game::generateRandomFoodPosition() const
 {
     const int margin = 1; // Вместо магического числа 1
     return {
-        foods->random(margin, gameFieldCols - margin) * cellSize,
-        foods->random(margin, gameFieldRows - margin) * cellSize
+        random(margin, gameFieldCols - margin) * cellSize,
+        random(margin, gameFieldRows - margin) * cellSize
     };
 }
 
@@ -256,7 +237,8 @@ bool Game::isFoodPositionInvalid(const Point &position,
 
 void Game::reborn()
 {
-    foods->setFoodsRandomly(gameFieldCols, gameFieldRows, cellSize);
+    //srand((unsigned)time(NULL));
+    foods->setFoodsRandomly(random(1, gameFieldCols - 1), random(1, gameFieldRows - 1), cellSize);
     //умирает.
     snake->removeSnake();
     // И опять возрождается.

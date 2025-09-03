@@ -106,7 +106,7 @@ void GameWidget::setGameSettings(int cols, int rows, int countFoods, int delay)
     if (game->foods->foodItems.size() != static_cast<size_t>(countFoods))
     {
         game->foods->foodItems.clear();
-        game->foods->createFoods(countFoods, 1, 1, cols, rows, game->cellSize);
+        game->foods->createFoods(countFoods, game->random(1, game->gameFieldCols - 1), game->random(1, game->gameFieldRows - 1), game->cellSize);
     }
     foodSprites.clear();
     createFoodSprites();

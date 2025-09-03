@@ -1,11 +1,11 @@
 #include "MainWidget.h"
 #include "ui_MainWidget.h"
 #include <QStackedWidget>
+#include <QBoxLayout>
+#include <QDebug>
 #include "GameWidget.h"
 #include "StartWidget.h"
-#include <QBoxLayout>
 #include "DlgGameUserSettings.h"
-#include <QDebug>
 
 MainWidget::MainWidget(QWidget *parent)
     : QWidget(parent)
