@@ -35,13 +35,14 @@ public:
     // когда змея развернется и врежется в собственное тело.
     bool canChangeDirection;
 
+    int directionX;
+    int directionY;
+
 private:
     void create(int xHead, int yHead, int directionX, int directionY, int snakeItemSize, int countSnakeItem);
 
     int headX;
     int headY;
-    int directionX;
-    int directionY;
     int snakeItemSize = 16;
     int countSnakeItem = 3;
     static const int HEAD_INDEX = 0;

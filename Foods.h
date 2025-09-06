@@ -14,5 +14,5 @@ public:
     std::vector<std::unique_ptr<Item> > foodItems;
     void createFoods(int countFoods, int x, int y, int gameFieldCellSize);
     int random(int low, int high);
-    void setFoodsRandomly(int x, int y, int cellSize);
+    void setFoods(int x, int y, int cellSize);
 };

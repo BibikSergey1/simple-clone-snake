@@ -147,6 +147,7 @@ void GameWidget::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Space:
         game->isPause = !game->isPause;
         break;
+#ifdef is_stacked_widget
     case Qt::Key_Q:
     case 1049:
         killTimer(timerId);
@@ -166,6 +167,7 @@ void GameWidget::keyPressEvent(QKeyEvent *event)
             timerId = startTimer(game->delay);
         }
         break;
+#endif
     }
 }
 
@@ -238,6 +240,7 @@ bool GameWidget::checkWinCondition() const
 
 void GameWidget::handleGameOver()
 {
+    game->snakeDied = true;
     showMessage(QStringLiteral("Game Over"));
     restartGame();
     emit signalStopGame();

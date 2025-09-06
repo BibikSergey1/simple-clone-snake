@@ -25,6 +25,7 @@ public:
     void setSnakePosition(int countColumns, int countRows);
     void setFoodsPosition();
     int random(int low, int high) const;
+    Point getRandomDir();
 
     std::unique_ptr<Snake> snake;
     std::unique_ptr<Foods> foods;

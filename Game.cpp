@@ -9,12 +9,17 @@
 Game::Game(int cols, int rows, int countFoods)
     : countFoods(countFoods)
 {
+    srand((unsigned)time(NULL));
     initGameField(cols, rows);
 
-    snake = std::make_unique<Snake>(getXPositionHead(cols), getYPositionHead(rows),
-                                    -cellSize, 0, maxCells);
+    Point dirPoint = getRandomDir();
 
-    srand((unsigned)time(NULL));
+    snake = std::make_unique<Snake>(getXPositionHead(cols), getYPositionHead(rows),
+                                    dirPoint.x, dirPoint.y, maxCells);
+    snake->createSnake();
+
+
+
     foods = std::make_unique<Foods>(countFoods, random(1, gameFieldCols - 1), random(1, gameFieldRows - 1), cellSize);
 
     countCellsForWin = maxCells;
@@ -22,6 +27,21 @@ Game::Game(int cols, int rows, int countFoods)
 
 Game::~Game()
 {
+}
+
+Point Game::getRandomDir()
+{
+    Direction dir = static_cast<Direction>(random(static_cast<int>(Direction::LEFT), static_cast<int>(Direction::DOWN)));
+    Point dirPoint;
+    switch (dir)
+    {
+    case Direction::LEFT: dirPoint.x = -cellSize; dirPoint.y = 0; break;
+    case Direction::RIGHT: dirPoint.x = cellSize; dirPoint.y = 0; break;
+    case Direction::UP: dirPoint.x = 0; dirPoint.y = -cellSize; break;
+    case Direction::DOWN: dirPoint.x = 0; dirPoint.y = cellSize; break;
+    case Direction::NONE: dirPoint.x = 0; dirPoint.y = 0; break;
+    }
+    return dirPoint;
 }
 
 int Game::getXPositionHead(int countColumns)
@@ -38,14 +58,36 @@ int Game::getYPositionHead(int countRows)
 void Game::setSnakePosition(int countColumns, int countRows)
 {
     int offsetXSnakeItem = 0;
+    int offsetYSnakeItem = 0;
     for (size_t ii = 0; ii < snake->items.size(); ++ii)
     {
         Item &currItem = *snake->items[ii];
-        currItem.x = getXPositionHead(countColumns) + offsetXSnakeItem;
-        offsetXSnakeItem += cellSize;
-        currItem.y = getYPositionHead(countRows);
-        currItem.dx = -cellSize;
-        currItem.dy = 0;
+
+        if (currItem.dx < 0 && currItem.dy == 0)
+        {
+            currItem.x = getXPositionHead(countColumns) + offsetXSnakeItem;
+            offsetXSnakeItem += cellSize;
+            currItem.y = getYPositionHead(countRows);
+        }
+        else if (currItem.dx > 0 && currItem.dy == 0)
+        {
+            currItem.x = getXPositionHead(countColumns) + offsetXSnakeItem;
+            offsetXSnakeItem -= cellSize;
+            currItem.y = getYPositionHead(countRows);
+        }
+
+        if (currItem.dx == 0 && currItem.dy < 0)
+        {
+            currItem.x = getXPositionHead(countColumns);
+            currItem.y = getYPositionHead(countRows) + offsetYSnakeItem;
+            offsetYSnakeItem += cellSize;
+        }
+        else if (currItem.dx == 0 && currItem.dy > 0)
+        {
+            currItem.x = getXPositionHead(countColumns);
+            currItem.y = getYPositionHead(countRows) + offsetYSnakeItem;
+            offsetYSnakeItem -= cellSize;
+        }
     }
 }
 
@@ -105,19 +147,6 @@ void Game::setDirection(Direction direction)
         else if (direction == Direction::DOWN)
         {
             snake->changeDirectionHead(0, cellSize);
-        }
-    }
-    // Если змея не движется (начало игры)
-    else
-    {
-        // Разрешаем любое направление для старта
-        switch (direction)
-        {
-        case Direction::LEFT: snake->changeDirectionHead(-cellSize, 0); break;
-        case Direction::RIGHT: snake->changeDirectionHead(cellSize, 0); break;
-        case Direction::UP: snake->changeDirectionHead(0, -cellSize); break;
-        case Direction::DOWN: snake->changeDirectionHead(0, cellSize); break;
-        case Direction::NONE: snake->changeDirectionHead(0, 0); break;
         }
     }
 }
@@ -237,12 +266,16 @@ bool Game::isFoodPositionInvalid(const Point &position,
 
 void Game::reborn()
 {
-    //srand((unsigned)time(NULL));
-    foods->setFoodsRandomly(random(1, gameFieldCols - 1), random(1, gameFieldRows - 1), cellSize);
     //умирает.
     snake->removeSnake();
     // И опять возрождается.
+    snakeDied = false;
+    Point dirPoint = getRandomDir();
+    snake->directionX = dirPoint.x;
+    snake->directionY = dirPoint.y;
     snake->createSnake();
+    setSnakePosition(gameFieldCols, gameFieldRows);
+    setFoodsPosition();
 }
 
 // void Game::updateHiScores()

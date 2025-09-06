@@ -4,24 +4,45 @@
 
 Snake::Snake(int headX, int headY, int directionX, int directionY, std::size_t maxCells)
     : canChangeDirection(false)
-    , headX(headX)
-    , headY(headY)
     , directionX(directionX)
     , directionY(directionY)
+    , headX(headX)
+    , headY(headY)
 {
     items.reserve(maxCells);// Резервируем сразу все место в памяти, чтобы во время игры не тратились ресурсы на релокацию.
-    createSnake();
 }
 
 void Snake::create(int xHead, int yHead, int directionX, int directionY, int snakeItemSize, int countSnakeItem)
 {
     int offsetXSnakeItem = 0;
+    int offsetYSnakeItem = 0;
+
     for (int ii = 0; ii < countSnakeItem; ++ii)
     {
         auto snakeItem = new Item();
-        snakeItem->x = xHead + offsetXSnakeItem;
-        offsetXSnakeItem += snakeItemSize;
-        snakeItem->y = yHead;
+
+        if (directionX < 0 && directionY == 0)
+        {
+            snakeItem->x = xHead + offsetXSnakeItem;
+            offsetXSnakeItem += snakeItemSize;
+        }
+        else if (directionX > 0 && directionY == 0)
+        {
+            snakeItem->x = xHead + offsetXSnakeItem;
+            offsetXSnakeItem -= snakeItemSize;
+        }
+
+        if (directionX == 0 && directionY < 0)
+        {
+            snakeItem->y = yHead + offsetYSnakeItem;
+            offsetYSnakeItem += snakeItemSize;
+        }
+        else if (directionX == 0 && directionY > 0)
+        {
+            snakeItem->y = yHead + offsetYSnakeItem;
+            offsetYSnakeItem -= snakeItemSize;
+        }
+
         snakeItem->dx = directionX;
         snakeItem->dy = directionY;
         snakeItem->w = snakeItemSize;

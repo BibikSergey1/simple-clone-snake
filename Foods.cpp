@@ -28,7 +28,7 @@ int Foods::random(int low, int high)
     return low + rand() % ((high + 1) - low);
 }
 
-void Foods::setFoodsRandomly(int x, int y, int cellSize)
+void Foods::setFoods(int x, int y, int cellSize)
 {
     for (auto &food : foodItems)
     {
