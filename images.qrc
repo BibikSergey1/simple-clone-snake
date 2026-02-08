@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/tileset.png</file>
+        <file>images/ScreenImage.jpg</file>
+    </qresource>
+</RCC>
