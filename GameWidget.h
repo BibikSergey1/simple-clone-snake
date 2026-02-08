@@ -29,10 +29,25 @@ private:
 
     void drawSnake(QPainter &painter);
     void drawHead(QPainter &painter, bool isDied) const;
-    void drawBody(QPainter &painter, const size_t &index);
+    //void drawBody(QPainter &painter, const size_t &index);
+    void drawBody(QPainter &painter, size_t index);
+    void drawTail(QPainter &painter, const std::unique_ptr<Item> &segment, int x, int y, int w, int h);
+    void drawStraightBody(QPainter &painter, const std::unique_ptr<Item> &segment, int x, int y, int w, int h);
+    void drawTurnBody(QPainter &painter, const std::unique_ptr<Item> &current, const std::unique_ptr<Item> &next);
     void drawGreed(QPainter &painter, bool isGreed = true);
     void drawFoods(QPainter &painter);
     void drawGameFiled(QPainter &painter);
+    void createFoodSprites();
+
+    void handlePauseState();
+    void updateGameState();
+    void checkGameConditions();
+    bool checkSnakeDeath() const;
+    bool checkWinCondition() const;
+    void handleGameOver();
+    void handleWin();
+    void showMessage(const QString &message);
+    void restartGame();
 
     QPixmap pixSnakeLeftHead;
     QPixmap pixSnakeRightHead;
@@ -59,7 +74,7 @@ private:
 
     QPixmap pixGameField;
     QPixmap pixFood;
-    std::unique_ptr<Sprite> foodSprite;
+    std::vector<std::unique_ptr<Sprite>> foodSprites;
 
     int pixSize = 16;
     int timerId = -1;

@@ -19,8 +19,8 @@ public:
     Snake(int headX, int headY, int directionX, int directionY, std::size_t maxCells);
 
     void move();
-    void checkBoundsGameField(const int &gameFieldX, const int &gameFieldY,
-                              const int &gameFieldWidth, const int &gameFieldHeight);
+    void checkBoundsGameField(int gameFieldX, int gameFieldY,
+                              int gameFieldWidth, int gameFieldHeight);
 
     bool isBitYourself();
     void removeSnake();// умирает
@@ -30,17 +30,20 @@ public:
 
     std::vector<std::unique_ptr<Item>> items;
 
-    // проверка на быстрое нажатие клавиш, когда голова змеи входит в свое тело.
-    // например: голова змеи движется влево, игрок нажимает быстро клавиши вниз и вправо.
-    bool testKeys;
+    // Защита от быстрой смены направления, которая может привести к столкновению с телом.
+    // Пример: при движении влево быстрое нажатие вниз→вправо может создать ситуацию,
+    // когда змея развернется и врежется в собственное тело.
+    bool canChangeDirection;
+
+    int directionX;
+    int directionY;
 
 private:
     void create(int xHead, int yHead, int directionX, int directionY, int snakeItemSize, int countSnakeItem);
 
     int headX;
     int headY;
-    int directionX;
-    int directionY;
     int snakeItemSize = 16;
     int countSnakeItem = 3;
+    static const int HEAD_INDEX = 0;
 };

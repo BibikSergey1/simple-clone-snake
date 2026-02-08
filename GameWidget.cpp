@@ -63,13 +63,30 @@ GameWidget::GameWidget(int cols, int rows, int countFoods, QWidget *parent)
     // pixFood.scaled(game->cellSize, game->cellSize);
     pixFood = pixTileset.copy(pixSize * 9, 0, pixSize * 4, pixSize);
     pixFood.scaled(game->cellSize * 4, game->cellSize);
-    foodSprite = std::make_unique<Sprite>(pixFood, 4);
+    createFoodSprites();
 
     qApp->setOverrideCursor(Qt::ArrowCursor);
 }
 
 GameWidget::~GameWidget()
 {}
+
+void GameWidget::createFoodSprites()
+{
+    for (size_t ii = 0; ii < game->foods->foodItems.size(); ++ii)
+    {
+        Sprite *foodSprite = new Sprite(pixFood, 4);
+        if (ii % 2 == 0)
+        {
+            foodSprite->frameDelay = 1;
+        }
+        else
+        {
+            foodSprite->frameDelay = 0.6f;
+        }
+        foodSprites.emplace_back(foodSprite);
+    }
+}
 
 void GameWidget::startGame()
 {
@@ -89,8 +106,11 @@ void GameWidget::setGameSettings(int cols, int rows, int countFoods, int delay)
     if (game->foods->foodItems.size() != static_cast<size_t>(countFoods))
     {
         game->foods->foodItems.clear();
-        game->foods->createFoods(countFoods, 1, 1, cols, rows, game->cellSize);
+        game->foods->createFoods(countFoods, game->random(1, game->gameFieldCols - 1), game->random(1, game->gameFieldRows - 1), game->cellSize);
     }
+    foodSprites.clear();
+    createFoodSprites();
+
     game->setSnakePosition(cols + 1, rows + 1);
 }
 
@@ -113,20 +133,21 @@ void GameWidget::keyPressEvent(QKeyEvent *event)
     switch(event->key())
     {
     case Qt::Key_Left:
-        game->setDirection(Game::DIR_LEFT);
+        game->setDirection(Game::Direction::LEFT);
         break;
     case Qt::Key_Right:
-        game->setDirection(Game::DIR_RIGHT);
+        game->setDirection(Game::Direction::RIGHT);
         break;
     case Qt::Key_Up:
-        game->setDirection(Game::DIR_UP);
+        game->setDirection(Game::Direction::UP);
         break;
     case Qt::Key_Down:
-        game->setDirection(Game::DIR_DOWN);
+        game->setDirection(Game::Direction::DOWN);
         break;
     case Qt::Key_Space:
         game->isPause = !game->isPause;
         break;
+#ifdef is_stacked_widget
     case Qt::Key_Q:
     case 1049:
         killTimer(timerId);
@@ -146,45 +167,109 @@ void GameWidget::keyPressEvent(QKeyEvent *event)
             timerId = startTimer(game->delay);
         }
         break;
+#endif
     }
 }
 
-void GameWidget::timerEvent(QTimerEvent *e)
+void GameWidget::timerEvent(QTimerEvent* event)
 {
-    if(timerId != e->timerId())
+    if (timerId != event->timerId())
         return;
 
-    if (game->isPause)
+    if (!game || !game->snake)
+        return;
+
+    handlePauseState();
+
+    if (!game->isPause)
     {
-        update();
-        return;
-    }
-
-    game->update();
-
-    game->snakeDied = game->snake->isBitYourself();
-    if (game->snakeDied)
-    {
-        qApp->setOverrideCursor(Qt::ArrowCursor);
-        QMessageBox::information(nullptr, QStringLiteral("Information"), QStringLiteral("Game Over"));
-        game->reborn();
-        game->snakeDied = false;
-
-        emit signalStopGame();
-        return;
-    }
-
-    if (static_cast<int>(game->snake->items.size()) == game->countCellsForWin)
-    {
-        qApp->setOverrideCursor(Qt::ArrowCursor);
-        QMessageBox::information(nullptr, QStringLiteral("Information"), QStringLiteral("You WIN!!!"));
-        game->reborn();
-
-        emit signalStopGame();
-        return;
+        updateGameState();
+        checkGameConditions();
     }
 
     update();
+}
+
+void GameWidget::handlePauseState()
+{
+    if (game->isPause)
+    {
+        // Только обновляем отрисовку для показа паузы
+        return;
+    }
+}
+
+void GameWidget::updateGameState()
+{
+    game->update();
+
+    // Обновляем анимации еды
+    for (const auto &foodSprite : foodSprites)
+    {
+        if (foodSprite)
+        {
+            foodSprite->updateFrame();
+        }
+    }
+}
+
+void GameWidget::checkGameConditions()
+{
+    if (checkSnakeDeath())
+    {
+        handleGameOver();
+        return;
+    }
+
+    if (checkWinCondition())
+    {
+        handleWin();
+        return;
+    }
+}
+
+bool GameWidget::checkSnakeDeath() const
+{
+    return game->snake->isBitYourself();
+}
+
+bool GameWidget::checkWinCondition() const
+{
+    return game->snake->items.size() >= game->countCellsForWin;
+}
+
+void GameWidget::handleGameOver()
+{
+    game->snakeDied = true;
+    showMessage(QStringLiteral("Game Over"));
+    restartGame();
+    emit signalStopGame();
+}
+
+void GameWidget::handleWin()
+{
+    showMessage(QStringLiteral("You WIN!!!"));
+    restartGame();
+    emit signalStopGame();
+}
+
+void GameWidget::showMessage(const QString &message)
+{
+    // Восстанавливаем курсор только для диалога
+    const QCursor originalCursor = cursor();
+    setCursor(Qt::ArrowCursor);
+
+    QMessageBox::information(this, QStringLiteral("Information"), message);
+
+    setCursor(originalCursor); // Восстанавливаем оригинальный курсор
+}
+
+void GameWidget::restartGame()
+{
+    if (game)
+    {
+        game->reborn();
+    }
 }
 
 void GameWidget::paintEvent(QPaintEvent*)
@@ -289,119 +374,117 @@ void GameWidget::drawHead(QPainter &painter, bool isDied) const
     }
 }
 
-void GameWidget::drawBody(QPainter &painter, const size_t &index)
+void GameWidget::drawBody(QPainter &painter, size_t index)
 {
     const auto &snake = game->snake->items;
 
-    if (snake.at(index) == snake.back())
-    {
-        // Поворачиваем хвост
+    if (index >= snake.size())
+        return;
 
-        if (snake.back()->dx < 0)
-        {
-            painter.drawPixmap(snake.back()->x, snake.back()->y,
-                               snake.back()->w, snake.back()->h,
-                               pixSnakeLeftTail);//left
-        }
-        else if (snake.back()->dx > 0)
-        {
-            painter.drawPixmap(snake.back()->x, snake.back()->y,
-                               snake.back()->w, snake.back()->h,
-                               pixSnakeRightTail);//right
-        }
-        else if (snake.back()->dy < 0)
-        {
-            painter.drawPixmap(snake.back()->x, snake.back()->y,
-                               snake.back()->w, snake.back()->h,
-                               pixSnakeUpTail);//up
-        }
-        else if (snake.back()->dy > 0)
-        {
-            painter.drawPixmap(snake.back()->x, snake.back()->y,
-                               snake.back()->w, snake.back()->h,
-                               pixSnakeDownTail);//down
-        }
+    const auto& current = snake[index];
+    const int x = current->x;
+    const int y = current->y;
+    const int w = current->w;
+    const int h = current->h;
+
+    // Хвост
+    if (index == snake.size() - 1)
+    {
+        drawTail(painter, current, x, y, w, h);
+        return;
     }
-    else if (snake.at(index)->dx == snake.at(index + 1)->dx
-             || snake.at(index)->dy == snake.at(index + 1)->dy)
+
+    const auto& next = snake[index + 1];
+
+    // Прямое движение
+    if (current->dx == next->dx || current->dy == next->dy)
     {
-        // Движение прямо по горизонтали или вертикали
-
-        if (snake.at(index)->dx < 0 || snake.at(index)->dx > 0)
-        {
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeHorizBody);//Horiz
-        }
-        else if (snake.at(index)->dy < 0 || snake.at(index)->dy > 0)
-        {
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeVertBody);//Vert
-        }
-
-        game->isNewSnakeItem = false;
+        drawStraightBody(painter, current, x, y, w, h);
+        return;
     }
-    else
-    {
-        // Поворачиваем тело змеи при поворотах.
 
-        if (snake.at(index)->dy < 0 && snake.at(index + 1)->dx < 0)
-        {
-            // влево и вверх
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeBodyLeftUpTurn);
-        }
-        else if (snake.at(index)->dy > 0 && snake.at(index + 1)->dx < 0)
-        {
-            // влево и вниз
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeBodyLeftDownTurn);
-        }
-        else if (snake.at(index)->dy < 0 && snake.at(index + 1)->dx > 0)
-        {
-            // вправо и вверх
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeBodyRightUpTurn);
-        }
-        else if (snake.at(index)->dy > 0 && snake.at(index + 1)->dx > 0)
-        {
-            // вправо и вниз
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeBodyRightDownTurn);
-        }
-        else if (snake.at(index)->dx < 0 && snake.at(index + 1)->dy < 0)
-        {
-            // вверх и влево
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeBodyRightDownTurn);
-        }
-        else if (snake.at(index)->dx > 0 && snake.at(index + 1)->dy < 0)
-        {
-            // вверх и вправо
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeBodyLeftDownTurn);
-        }
-        else if (snake.at(index)->dx < 0 && snake.at(index + 1)->dy > 0)
-        {
-            // вниз и влево
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeBodyRightUpTurn);
-        }
-        else if (snake.at(index)->dx > 0 && snake.at(index + 1)->dy > 0)
-        {
-            // вниз и вправо
-            painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
-                               snake.at(index)->w, snake.at(index)->h,
-                               pixSnakeBodyLeftUpTurn);
-        }
+    // Повороты
+    drawTurnBody(painter, current, next);
+}
+
+void GameWidget::drawTail(QPainter &painter, const std::unique_ptr<Item> &segment, int x, int y, int w, int h)
+{
+    if (segment->dx < 0)
+    {
+        painter.drawPixmap(x, y, w, h, pixSnakeLeftTail);
+    }
+    else if (segment->dx > 0)
+    {
+        painter.drawPixmap(x, y, w, h, pixSnakeRightTail);
+    }
+    else if (segment->dy < 0)
+    {
+        painter.drawPixmap(x, y, w, h, pixSnakeUpTail);
+    }
+    else if (segment->dy > 0)
+    {
+        painter.drawPixmap(x, y, w, h, pixSnakeDownTail);
+    }
+}
+
+void GameWidget::drawStraightBody(QPainter &painter, const std::unique_ptr<Item> &segment, int x, int y, int w, int h)
+{
+    if (segment->dx != 0)
+    {
+        painter.drawPixmap(x, y, w, h, pixSnakeHorizBody);
+    }
+    else if (segment->dy != 0)
+    {
+        painter.drawPixmap(x, y, w, h, pixSnakeVertBody);
+    }
+}
+
+void GameWidget::drawTurnBody(QPainter &painter, const std::unique_ptr<Item> &current, const std::unique_ptr<Item> &next)
+{
+    const int x = current->x;
+    const int y = current->y;
+    const int w = current->w;
+    const int h = current->h;
+
+    if (current->dy < 0 && next->dx < 0)
+    {
+        // влево и вверх
+        painter.drawPixmap(x, y, w, h, pixSnakeBodyLeftUpTurn);
+    }
+    else if (current->dy > 0 && next->dx < 0)
+    {
+        // влево и вниз
+        painter.drawPixmap(x, y, w, h, pixSnakeBodyLeftDownTurn);
+    }
+    else if (current->dy < 0 && next->dx > 0)
+    {
+        // вправо и вверх
+        painter.drawPixmap(x, y, w, h, pixSnakeBodyRightUpTurn);
+    }
+    else if (current->dy > 0 && next->dx > 0)
+    {
+        // вправо и вниз
+        painter.drawPixmap(x, y, w, h, pixSnakeBodyRightDownTurn);
+    }
+    else if (current->dx < 0 && next->dy < 0)
+    {
+        // вверх и влево
+        painter.drawPixmap(x, y, w, h, pixSnakeBodyRightDownTurn);
+    }
+    else if (current->dx > 0 && next->dy < 0)
+    {
+        // вверх и вправо
+        painter.drawPixmap(x, y, w, h, pixSnakeBodyLeftDownTurn);
+    }
+    else if (current->dx < 0 && next->dy > 0)
+    {
+        // вниз и влево
+        painter.drawPixmap(x, y, w, h, pixSnakeBodyRightUpTurn);
+    }
+    else if (current->dx > 0 && next->dy > 0)
+    {
+        // вниз и вправо
+        painter.drawPixmap(x, y, w, h, pixSnakeBodyLeftUpTurn);
     }
 }
 
@@ -453,15 +536,13 @@ void GameWidget::drawSnake(QPainter &painter)
 
 void GameWidget::drawFoods(QPainter &painter)
 {
-    foodSprite->updateFrame();
-
     // Рисуем еду для змеи
     //painter.setBrush(Qt::darkGreen);
-    for(const auto &food : game->foods->foodItems)
+    for(size_t ii = 0; ii < foodSprites.size(); ++ii)
     {
         //painter.drawEllipse(food->x, food->y, food->w, food->h);
         //painter.drawPixmap(food->x, food->y, food->w, food->h, pixFood);
-        foodSprite->draw(&painter, food->x, food->y);
+        foodSprites[ii]->draw(&painter, game->foods->foodItems[ii]->x, game->foods->foodItems[ii]->y);
     }
 }
 
@@ -477,3 +558,120 @@ void GameWidget::drawGameFiled(QPainter &painter)
                        game->gameFieldHeight - game->cellSize,
                        pixGameField);
 }
+
+// Временно сохраним, но позже, если не будет проблем с отрисовкой змеи, можно удалить.
+// void GameWidget::drawBody(QPainter &painter, const size_t &index)
+// {
+//     const auto &snake = game->snake->items;
+
+//     if (snake.at(index) == snake.back())
+//     {
+//         // Поворачиваем хвост
+
+//         if (snake.back()->dx < 0)
+//         {
+//             painter.drawPixmap(snake.back()->x, snake.back()->y,
+//                                snake.back()->w, snake.back()->h,
+//                                pixSnakeLeftTail);//left
+//         }
+//         else if (snake.back()->dx > 0)
+//         {
+//             painter.drawPixmap(snake.back()->x, snake.back()->y,
+//                                snake.back()->w, snake.back()->h,
+//                                pixSnakeRightTail);//right
+//         }
+//         else if (snake.back()->dy < 0)
+//         {
+//             painter.drawPixmap(snake.back()->x, snake.back()->y,
+//                                snake.back()->w, snake.back()->h,
+//                                pixSnakeUpTail);//up
+//         }
+//         else if (snake.back()->dy > 0)
+//         {
+//             painter.drawPixmap(snake.back()->x, snake.back()->y,
+//                                snake.back()->w, snake.back()->h,
+//                                pixSnakeDownTail);//down
+//         }
+//     }
+//     else if (snake.at(index)->dx == snake.at(index + 1)->dx
+//              || snake.at(index)->dy == snake.at(index + 1)->dy)
+//     {
+//         // Движение прямо по горизонтали или вертикали
+
+//         if (snake.at(index)->dx < 0 || snake.at(index)->dx > 0)
+//         {
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeHorizBody);//Horiz
+//         }
+//         else if (snake.at(index)->dy < 0 || snake.at(index)->dy > 0)
+//         {
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeVertBody);//Vert
+//         }
+
+//         game->isNewSnakeItem = false;
+//     }
+//     else
+//     {
+//         // Поворачиваем тело змеи при поворотах.
+
+//         if (snake.at(index)->dy < 0 && snake.at(index + 1)->dx < 0)
+//         {
+//             // влево и вверх
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeBodyLeftUpTurn);
+//         }
+//         else if (snake.at(index)->dy > 0 && snake.at(index + 1)->dx < 0)
+//         {
+//             // влево и вниз
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeBodyLeftDownTurn);
+//         }
+//         else if (snake.at(index)->dy < 0 && snake.at(index + 1)->dx > 0)
+//         {
+//             // вправо и вверх
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeBodyRightUpTurn);
+//         }
+//         else if (snake.at(index)->dy > 0 && snake.at(index + 1)->dx > 0)
+//         {
+//             // вправо и вниз
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeBodyRightDownTurn);
+//         }
+//         else if (snake.at(index)->dx < 0 && snake.at(index + 1)->dy < 0)
+//         {
+//             // вверх и влево
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeBodyRightDownTurn);
+//         }
+//         else if (snake.at(index)->dx > 0 && snake.at(index + 1)->dy < 0)
+//         {
+//             // вверх и вправо
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeBodyLeftDownTurn);
+//         }
+//         else if (snake.at(index)->dx < 0 && snake.at(index + 1)->dy > 0)
+//         {
+//             // вниз и влево
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeBodyRightUpTurn);
+//         }
+//         else if (snake.at(index)->dx > 0 && snake.at(index + 1)->dy > 0)
+//         {
+//             // вниз и вправо
+//             painter.drawPixmap(snake.at(index)->x, snake.at(index)->y,
+//                                snake.at(index)->w, snake.at(index)->h,
+//                                pixSnakeBodyLeftUpTurn);
+//         }
+//     }
+// }

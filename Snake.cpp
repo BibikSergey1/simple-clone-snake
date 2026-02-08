@@ -3,25 +3,46 @@
 #include <QDebug>
 
 Snake::Snake(int headX, int headY, int directionX, int directionY, std::size_t maxCells)
-    : testKeys(false)
-    , headX(headX)
-    , headY(headY)
+    : canChangeDirection(false)
     , directionX(directionX)
     , directionY(directionY)
+    , headX(headX)
+    , headY(headY)
 {
     items.reserve(maxCells);// Резервируем сразу все место в памяти, чтобы во время игры не тратились ресурсы на релокацию.
-    createSnake();
 }
 
 void Snake::create(int xHead, int yHead, int directionX, int directionY, int snakeItemSize, int countSnakeItem)
 {
     int offsetXSnakeItem = 0;
+    int offsetYSnakeItem = 0;
+
     for (int ii = 0; ii < countSnakeItem; ++ii)
     {
         auto snakeItem = new Item();
-        snakeItem->x = xHead + offsetXSnakeItem;
-        offsetXSnakeItem += snakeItemSize;
-        snakeItem->y = yHead;
+
+        if (directionX < 0 && directionY == 0)
+        {
+            snakeItem->x = xHead + offsetXSnakeItem;
+            offsetXSnakeItem += snakeItemSize;
+        }
+        else if (directionX > 0 && directionY == 0)
+        {
+            snakeItem->x = xHead + offsetXSnakeItem;
+            offsetXSnakeItem -= snakeItemSize;
+        }
+
+        if (directionX == 0 && directionY < 0)
+        {
+            snakeItem->y = yHead + offsetYSnakeItem;
+            offsetYSnakeItem += snakeItemSize;
+        }
+        else if (directionX == 0 && directionY > 0)
+        {
+            snakeItem->y = yHead + offsetYSnakeItem;
+            offsetYSnakeItem -= snakeItemSize;
+        }
+
         snakeItem->dx = directionX;
         snakeItem->dy = directionY;
         snakeItem->w = snakeItemSize;
@@ -45,16 +66,20 @@ void Snake::addSnakeItem()
 
 void Snake::changeDirectionHead(int dx, int dy)
 {
-    testKeys = false;
+    canChangeDirection = false;// Запрещаем до следующего движения
 
-    items[0]->dx = dx;
-    items[0]->dy = dy;
+    Item &head = *items[HEAD_INDEX];
+    head.dx = dx;
+    head.dy = dy;
 }
 
 void Snake::move()
 {
-    //змея ползет
-    for (int ii = items.size() - 1; ii > 0; --ii)
+    if (items.empty())
+        return; // Защита от пустой змеи
+
+    // Двигаем сегменты с хвоста к голове
+    for (int ii = items.size() - 1; ii > HEAD_INDEX; --ii)
     {
         items[ii]->x = items[ii - 1]->x;
         items[ii]->y = items[ii - 1]->y;
@@ -62,40 +87,42 @@ void Snake::move()
         items[ii]->dy = items[ii - 1]->dy;
     }
 
-    items[0]->x += items[0]->dx;
-    items[0]->y += items[0]->dy;
+    // Двигаем голову
+    Item &head = *items[HEAD_INDEX];
+    head.x += head.dx;
+    head.y += head.dy;
 
-    testKeys = true;
+    canChangeDirection = true; // Разрешаем обработку ввода после движения
 }
 
-void Snake::checkBoundsGameField(const int &gameFieldX, const int &gameFieldY,
-                                 const int &gameFieldWidth, const int &gameFieldHeight)
+void Snake::checkBoundsGameField(int gameFieldX, int gameFieldY,
+                                 int gameFieldWidth, int gameFieldHeight)
 {
     //змея выходит за пределы игрового поля
 
-    // Проверка левой границы по координате X
-    if(items[0]->x < gameFieldX)
+    if (items.empty())
+        return;
+
+    Item &head = *items[HEAD_INDEX];
+
+    // Проверка X-координаты (горизонтальные границы)
+    if (head.x < gameFieldX)
     {
-        items[0]->x = gameFieldWidth - items[0]->w;
-        items[0]->y = items[0]->y;
+        head.x = gameFieldWidth - head.w; // Телепорт справа
     }
-    // Проверка правой границы по координате X
-    else if(items[0]->x > gameFieldWidth - items[0]->w)
+    else if (head.x + head.w > gameFieldWidth)
     {
-        items[0]->x = gameFieldX;
-        items[0]->y = items[0]->y;
+        head.x = gameFieldX; // Телепорт слева
     }
-    // Проверка нижней границы по координате Y
-    if(items[0]->y > gameFieldHeight - items[0]->h)
+
+    // Проверка Y-координаты (вертикальные границы) - независимо от X
+    if (head.y < gameFieldY)
     {
-        items[0]->x = items[0]->x;
-        items[0]->y = gameFieldY;
+        head.y = gameFieldHeight - head.h; // Телепорт снизу
     }
-    // Проверка верхней границы по координате Y
-    else if(items[0]->y < gameFieldY)
+    else if (head.y + head.h > gameFieldHeight)
     {
-        items[0]->x = items[0]->x;
-        items[0]->y = gameFieldHeight - items[0]->h;
+        head.y = gameFieldY; // Телепорт сверху
     }
 }
 

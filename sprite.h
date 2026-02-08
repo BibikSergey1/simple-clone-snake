@@ -14,5 +14,6 @@ public:
     QPixmap &m_Pixmap;
     float m_currFrame;
     int m_numFrames;
+    float frameDelay;
 };
 

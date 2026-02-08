@@ -1,10 +1,12 @@
 #include "Sprite.h"
 #include <QPainter>
+#include <QDebug>
 
 Sprite::Sprite(QPixmap &pixmap, int num_frame)
     : m_Pixmap(pixmap)
     , m_currFrame(0.0f)
     , m_numFrames(num_frame)
+    , frameDelay(0.0f)
 {
 }
 
@@ -21,8 +23,7 @@ void Sprite::draw(QPainter *painter, int x, int y)
 
 void Sprite::updateFrame()
 {
-    m_currFrame += 1;
-
+    m_currFrame += frameDelay;
     if(m_currFrame > m_numFrames)
     {
         m_currFrame -= m_numFrames;
